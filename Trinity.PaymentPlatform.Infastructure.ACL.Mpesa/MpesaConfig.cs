@@ -2,6 +2,8 @@
 {
     public class MpesaConfig
     {
+        public static string SectionName => "MpesaConfig";
+
         public string MerchantId { get; set; }
         public string InitiatorName { get; set; }
         public string CertificateName { get; set; }

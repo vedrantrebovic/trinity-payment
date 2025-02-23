@@ -19,6 +19,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trinity.PaymentPlatform.Pro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trinity.PaymentPlatform.Infastructure.ACL.Mpesa", "Trinity.PaymentPlatform.Infastructure.ACL.Mpesa\Trinity.PaymentPlatform.Infastructure.ACL.Mpesa.csproj", "{103E8BF8-C126-4A72-85BD-840AE546CFC0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{67FDAA9A-F466-49DA-8FAB-28F5A1902335}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trinity.PaymentPlatform.Shared", "Trinity.PaymentPlatform.Shared\Trinity.PaymentPlatform.Shared.csproj", "{B56A15C8-CD45-437C-A106-09E467B1EFA8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{EAF77AC8-5B98-4746-BEE5-88CA70D50F46}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +47,10 @@ Global
 		{103E8BF8-C126-4A72-85BD-840AE546CFC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{103E8BF8-C126-4A72-85BD-840AE546CFC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{103E8BF8-C126-4A72-85BD-840AE546CFC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B56A15C8-CD45-437C-A106-09E467B1EFA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B56A15C8-CD45-437C-A106-09E467B1EFA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B56A15C8-CD45-437C-A106-09E467B1EFA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B56A15C8-CD45-437C-A106-09E467B1EFA8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +60,6 @@ Global
 		{E90C7DE7-7BAE-4815-9A63-120CFA1889DF} = {004669E7-6646-48B8-B954-B17C0DC58309}
 		{589CC266-19BC-49A3-8803-6DF0200F450F} = {35C9C616-3B4A-4729-B77F-EB3A7C6C3ADC}
 		{103E8BF8-C126-4A72-85BD-840AE546CFC0} = {004669E7-6646-48B8-B954-B17C0DC58309}
+		{B56A15C8-CD45-437C-A106-09E467B1EFA8} = {67FDAA9A-F466-49DA-8FAB-28F5A1902335}
 	EndGlobalSection
 EndGlobal

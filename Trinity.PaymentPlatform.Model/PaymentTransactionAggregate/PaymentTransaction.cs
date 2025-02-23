@@ -23,14 +23,18 @@ public class PaymentTransaction : Entity<long>, IAggregateRoot
 
     protected PaymentTransaction(int providerId, string userId, Money amount, TransactionType type,
         string accountNumber,
-        string transactionId, string providerTransactionId, string merchantRequestId, string checkoutRequestId)
+        string transactionId)
     {
         ProviderId = providerId;
         UserId = userId;
         Type = type;
         TransactionId = transactionId;
-        ProviderTransactionId = providerTransactionId;
         Amount = amount;
+    }
+
+    public virtual void SetProviderTransactionId(string providerTransactionId)
+    {
+        ProviderTransactionId = providerTransactionId;
     }
 
     protected virtual Result SetInProgress()
@@ -73,7 +77,7 @@ public class PaymentTransaction : Entity<long>, IAggregateRoot
         return Result.Ok();
     }
 
-    protected virtual Result SetFailed(string error)
+    protected virtual Result SetFailed(string? error)
     {
         //todo: add state transition validation
         Status = PaymentTransactionStatus.Failed;

@@ -1,42 +1,28 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using FluentResults;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OneOf;
+using Trinity.PaymentPlatform.Infastructure.ACL.Mpesa.Contracts;
 using Trinity.PaymentPlatform.Infastructure.ACL.Mpesa.Models.Mpesa;
 using Trinity.PaymentPlatform.Model.Enum;
+using Trinity.PaymentPlatform.Model.PaymentProviderAggregate;
 using Trinity.PaymentPlatform.Model.PaymentTransactionAggregate;
 using Trinity.PaymentPlatform.Model.SeedWork;
+using Trinity.PaymentPlatform.Model.SharedKernel;
 
 namespace Trinity.PaymentPlatform.Infastructure.ACL.Mpesa;
 
-public interface IMpesaPaymentProvider
-{
-    // Token
-    Task<string> GetOAuthTokenAsync(string providerUrl, string key, string password);
-
-    // Payin (STK Push)
-    Task CreatePayinStkPushAsync(MpesaPayInRequest request); // create transaction 
-    Task ConfirmPayinStkPushAsync(PaymentTransaction transaction, Model.PaymentProviderAggregate.PaymentProvider provider, string token); // send to provider payin
-    Task ConfirmPayinAsync(MpesaCallbackRequest request); // callback payin 
-    Task MPesaExpressQueryAsync(PaymentTransaction transaction, Model.PaymentProviderAggregate.PaymentProvider provider, string token); // status check payin 
-
-    // Payout
-    Task ProcessPayoutAsync(MpesaPayoutRequest request); // create transaction
-    Task ConfirmPayoutAsync(PaymentTransaction transaction, Model.PaymentProviderAggregate.PaymentProvider provider, string token); // send to provider payou
-    Task ProcessB2CResultAsync(B2CResultRequestPayout request); // callback payin
-    Task TransactionStatusQueryAsync(PaymentTransaction transaction, Model.PaymentProviderAggregate.PaymentProvider provider, string token); // status check payou
-    Task ProcessPayoutStatusCheckAsync(B2CResultRequestPayout request); // callback status check 
-    Task ProcessTimeoutRequestAsync(B2CRequest request); // timeout callback payout
-    Task ProcessStatusCheckTimeoutRequestAsync(TransactionStatusQueryRequest request); // timeout status check payout 
-
-}
 
 public class MpesaPaymentProvider : IMpesaPaymentProvider
 {
     private readonly IPaymentTransactionRepository _transactionRepository;
+    private readonly IPaymentProviderRepository _paymentProviderRepository;
     private readonly ILogger<MpesaPaymentProvider> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMemoryCache _memoryCache;
@@ -50,8 +36,7 @@ public class MpesaPaymentProvider : IMpesaPaymentProvider
         ILogger<MpesaPaymentProvider> logger,
         IHttpClientFactory httpClientFactory,
         IMemoryCache memoryCache,
-        IUnitOfWork unitOfWork
-    )
+        IUnitOfWork unitOfWork, IPaymentProviderRepository paymentProviderRepository)
     {
         _mpesaConfig = mpesaConfig.Value;
         _transactionRepository = transactionRepository;
@@ -59,6 +44,7 @@ public class MpesaPaymentProvider : IMpesaPaymentProvider
         _httpClientFactory = httpClientFactory;
         _memoryCache = memoryCache;
         _unitOfWork = unitOfWork;
+        _paymentProviderRepository = paymentProviderRepository;
     }
 
     #region Token
@@ -108,102 +94,125 @@ public class MpesaPaymentProvider : IMpesaPaymentProvider
     #region Payin (STK Push)
 
 
-    public async Task CreatePayinStkPushAsync(MpesaPayInRequest request)
+    public async Task<OneOf<bool, IList<IDomainError>, Exception>> CreatePayinStkPushAsync(MpesaPayInRequest request)
     {
         try
         {
-            await _unitOfWork.BeginTransaction();
+            _unitOfWork.BeginTransaction();
 
-            var provider = await _transactionRepository.GetPaymentProviderById(_providerId, _unitOfWork);
+            var provider = await _paymentProviderRepository.GetAsync(_providerId);
             if (provider == null)
             {
                 _logger.LogError("Mpesa: Provider {ProviderId} not found", _providerId);
-                throw new Exception($"Payment provider with ID {_providerId} not found.");
+                return DomainError.NotFound("err:provider_not_found");
             }
 
-            var transaction = new PaymentTransaction
-            {
-                ProviderId = _providerId,
-                UserId = request.UserId,
-                Amount = request.Amount,
-                Status = (int)Status.PENDING,
-                Type = (int)TransactionType.PAYIN,
-                AccountNumber = request.AccountNumber,
-                TransactionId = Guid.NewGuid().ToString()
-            };
+            var moneyAmount = Money.Create(request.Amount, request.CurrencyCode); //todo: check if valid currency code
 
-            await _transactionRepository.CreateTransactionAsync(transaction, _unitOfWork);
+            var transaction = MpesaPaymentTransaction.CreatePayIn(_providerId, request.UserId.ToString(),
+                moneyAmount.Value, request.AccountNumber, request.TransactionReference);
+
+            await _transactionRepository.SaveAsync(transaction);
             await _unitOfWork.CommitAsync();
+
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
-            await _unitOfWork.RollbackAsync();
-            throw;
-        }
-    }
-
-    public async Task ConfirmPayinStkPushAsync(PaymentTransaction transaction, DapperRepository.Models.PaymentProvider provider, string token)
-    {
-        string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-        transaction.Timestamp = timestamp;
-
-        try
-        {
-            await _unitOfWork.BeginTransactionAsync();
-
-            var requestData = new
-            {
-                BusinessShortCode = _mpesaConfig.BusinessShortCode,
-                Password = MpesaSecurity.GeneratePassword(_mpesaConfig.BusinessShortCode, _mpesaConfig.PayinStkPushKey, timestamp),
-                Timestamp = timestamp,
-                TransactionType = _mpesaConfig.PayinStkPushTransactionType,
-                Amount = transaction.Amount,
-                PartyA = transaction.AccountNumber,
-                PartyB = _mpesaConfig.BusinessShortCode,
-                PhoneNumber = transaction.AccountNumber,
-                CallBackURL = $"{provider.CallbackUrl}/api/payin/callback",
-                AccountReference = $"PAYIN_{transaction.AccountNumber}", // Account Reference: This is an Alpha-Numeric parameter that is defined by your system as an Identifier of the transaction for the CustomerPayBillOnline transaction type. Along with the business name, this value is also displayed to the customer in the STK Pin Prompt message. Maximum of 12 characters.
-                TransactionDesc = "Payin" // This is any additional information / comment that can be sent along with the request from your system.Maximum of 13 Characters.
-            };
-
-            var responseDoc = await SendMpesaRequestAsync($"{provider.ApiUrl}/mpesa/stkpush/v1/processrequest", requestData, token);
-            using (responseDoc)
-            {
-                string responseCode = responseDoc.RootElement.GetProperty("ResponseCode").GetString();
-                if (responseCode == "0")
-                {
-                    transaction.MerchantRequestID = responseDoc.RootElement.GetProperty("MerchantRequestID").GetString();
-                    transaction.CheckoutRequestID = responseDoc.RootElement.GetProperty("CheckoutRequestID").GetString();
-                    transaction.Status = (int)Status.IN_PROGRESS;
-                }
-                else
-                {
-                    string resultDesc = responseDoc.RootElement.GetProperty("ResponseDescription").GetString();
-                    transaction.Error = resultDesc;
-                    transaction.Status = (int)Status.FAILED;
-                    _logger.LogError("Mpesa: Transaction {TransactionId} failed with response code {ResponseCode}", transaction.TransactionId, responseCode);
-                }
-            }
-
-        }
-        catch (MpesaRequestException ex)
-        {
-            transaction.Error = ex.ErrorMessage;
-            transaction.Status = (int)Status.FAILED;
-            transaction.UpdatedAt = DateTime.UtcNow;
-            _logger.LogError($"Request failed with status {ex.StatusCode}. Content: {ex.ResponseContent}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
-            transaction.Status = (int)Status.UNCONFIRMED;
+            return ex;
         }
         finally
         {
-            transaction.UpdatedAt = DateTime.UtcNow;
-            await _transactionRepository.UpdateTransactionAsync(transaction, _unitOfWork);
+            await _unitOfWork.RollbackAsync();
+        }
+    }
+
+    public async Task ConfirmPayinStkPushAsync(MpesaPaymentTransaction transaction, PaymentProvider provider, string token)
+    {
+        string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        transaction.SetProviderTimestamp(timestamp);
+
+        try
+        {
+            bool failedRequest = false;
+            string? error = null;
+            JsonDocument? responseDoc = null;
+
+            try
+            {
+                var requestData = new
+                {
+                    BusinessShortCode = _mpesaConfig.BusinessShortCode,
+                    Password = MpesaSecurity.GeneratePassword(_mpesaConfig.BusinessShortCode,
+                        _mpesaConfig.PayinStkPushKey, timestamp),
+                    Timestamp = timestamp,
+                    TransactionType = _mpesaConfig.PayinStkPushTransactionType,
+                    Amount = transaction.Amount.Amount,
+                    PartyA = transaction.AccountNumber,
+                    PartyB = _mpesaConfig.BusinessShortCode,
+                    PhoneNumber = transaction.AccountNumber,
+                    CallBackURL = $"{provider.CallbackUrl}/api/payin/callback",
+                    AccountReference =
+                        $"PAYIN_{transaction.AccountNumber}", // Account Reference: This is an Alpha-Numeric parameter that is defined by your system as an Identifier of the transaction for the CustomerPayBillOnline transaction type. Along with the business name, this value is also displayed to the customer in the STK Pin Prompt message. Maximum of 12 characters.
+                    TransactionDesc =
+                        "Payin" // This is any additional information / comment that can be sent along with the request from your system.Maximum of 13 Characters.
+                };
+
+                responseDoc = await SendMpesaRequestAsync($"{provider.ApiUrl}/mpesa/stkpush/v1/processrequest",
+                    requestData, token);
+                failedRequest = false;
+            }
+            catch (MpesaRequestException ex)
+            {
+                failedRequest = true;
+                error = ex.ErrorMessage;
+                _logger.LogError($"Request failed with status {ex.StatusCode}. Content: {ex.ResponseContent}");
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            _unitOfWork.BeginTransaction();
+
+            if (failedRequest)
+            {
+                transaction.SetFailed(error);
+            }
+            else
+            {
+                using (responseDoc)
+                {
+                    string responseCode = responseDoc.RootElement.GetProperty("ResponseCode").GetString();
+                    if (responseCode == "0")
+                    {
+                        transaction.SetRequestId(responseDoc.RootElement.GetProperty("MerchantRequestID").GetString(),
+                            responseDoc.RootElement.GetProperty("CheckoutRequestID").GetString());
+                        transaction.SetInProgress();
+                    }
+                    else
+                    {
+                        string resultDesc = responseDoc.RootElement.GetProperty("ResponseDescription").GetString();
+                        transaction.SetFailed(resultDesc);
+                        _logger.LogError("Mpesa: Transaction {TransactionId} failed with response code {ResponseCode}",
+                            transaction.TransactionId, responseCode);
+                    }
+                }
+            }
+
+            await _transactionRepository.UpdateAsync(transaction);
             await _unitOfWork.CommitAsync();
+        }
+
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+
+        }
+        finally
+        {
+            await _unitOfWork.RollbackAsync();
         }
     }
 
