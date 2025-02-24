@@ -2,6 +2,7 @@ using Npgsql;
 using Quartz;
 using Serilog;
 using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa;
+using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Extensions;
 using Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate.Extensions;
 using Trinity.PaymentPlatform.Processors.Mpesa;
 using Trinity.PaymentPlatform.Processors.Mpesa.Jobs;
@@ -33,6 +34,7 @@ builder.Services.AddHttpClient("Mpesa")
 builder.Services.AddMemoryCache();
 builder.Services.AddNHibernate();
 builder.Services.AddPaymentRepositories();
+builder.Services.AddMpesa(builder.Configuration);
 
 builder.Services.AddQuartz(q =>
 {

@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using FluentResults;
 using Microsoft.Extensions.Logging;
@@ -29,6 +28,9 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
     {
         try
         {
+            var existing = await transactionRepository.GetByTransactionIdAsync(request.TransactionReference);
+            if (existing != null) return existing.Id;
+
             var provider = await paymentProviderRepository.GetAsync(_providerId);
             if (provider == null)
             {
@@ -54,14 +56,13 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
         }
     }
 
-    public async Task<Result> ConfirmPayinStkPushAsync(MpesaPaymentTransaction transaction)
+    public async Task ConfirmPayinStkPushAsync(MpesaPaymentTransaction transaction)
     {
         string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
         transaction.SetProviderTimestamp(timestamp);
 
         try
         {
-            string? error = null;
             JsonDocument? responseDoc = null;
 
             var provider = await paymentProviderRepository.GetAsync(transaction.ProviderId);
@@ -94,14 +95,14 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 else
                 {
                     transaction.SetFailed(string.Join('|', sendRequestResult.Errors.ConvertAll(p => p.Message)));
-                    return sendRequestResult.ToResult();
+                    return;
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, ex.Message);
                 transaction.SetUnconfirmed("Unhandled exception");
-                return Result.Fail(ErrorMessageFormatter.Error());
+                return;
             }
 
             if (responseDoc != null)
@@ -114,7 +115,6 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                         transaction.SetRequestId(responseDoc.RootElement.GetProperty("MerchantRequestID").GetString(),
                             responseDoc.RootElement.GetProperty("CheckoutRequestID").GetString());
                         transaction.SetInProgress();
-                        return Result.Ok();
                     }
                     else
                     {
@@ -122,12 +122,9 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                         transaction.SetFailed(resultDesc);
                         logger.LogError("Mpesa: Transaction {TransactionId} failed with response code {ResponseCode}",
                             transaction.TransactionId, responseCode);
-                        return Result.Fail(resultDesc);
                     }
                 }
             }
-
-            return Result.Fail(ErrorMessageFormatter.Error("unknown_error"));
         }
 
         catch (Exception ex)
@@ -145,7 +142,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 request.Body.StkCallback.MerchantRequestID,
                 request.Body.StkCallback.CheckoutRequestID);
 
-            if (transaction == null || transaction.MpesaStatus != MpesaPaymentTransactionStatus.IN_PROGRESS)
+            if (transaction is not { MpesaStatus: MpesaPaymentTransactionStatus.IN_PROGRESS })
             {
                 logger.LogError("Mpesa: Transaction {MerchantRequestID} not found or not in progress",
                     request.Body.StkCallback.MerchantRequestID);
@@ -185,7 +182,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
         }
     }
 
-    public async Task<Result> MPesaExpressQueryAsync(MpesaPaymentTransaction transaction)
+    public async Task MPesaExpressQueryAsync(MpesaPaymentTransaction transaction)
     {
         try
         {
@@ -205,20 +202,20 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 if (expressResponse.ResultCode == "0")
                 {
                     transaction.SetCompleted();
-                    return Result.Ok();
+                    return;
                 }
                 else
                 {
                     string resultDesc = responseDoc.Value.RootElement.GetProperty("ResponseDescription").GetString();
                     transaction.SetFailed(resultDesc);
                     logger.LogError($"Mpesa: Transaction {transaction.TransactionId} failed with response {resultDesc}");
-                    return Result.Fail(resultDesc);
+                    return;
                 }
             }
             else
             {
                 transaction.SetFailed(string.Join('|', responseDoc.Errors.ConvertAll(p => p.Message)));
-                return responseDoc.ToResult();
+                return;
             }
 
         }
@@ -237,6 +234,9 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
     {
         try
         {
+            var existing = await transactionRepository.GetByTransactionIdAsync(request.TransactionReference);
+            if (existing != null) return existing.Id;
+
             var provider = await paymentProviderRepository.GetAsync(_providerId);
             if (provider == null)
             {
@@ -261,56 +261,65 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
         }
     }
 
-    public async Task<Result> ConfirmPayoutAsync(MpesaPaymentTransaction transaction)
+    public async Task ConfirmPayoutAsync(MpesaPaymentTransaction transaction)
     {
         try
         {
+            JsonDocument? responseDoc = null;
+
             var provider = await paymentProviderRepository.GetAsync(_providerId);
-
-            var requestData = new B2CRequest
+            try
             {
-                OriginatorConversationID = transaction.TransactionId,
-                InitiatorName = _mpesaConfig.InitiatorName,
-                SecurityCredential = MpesaSecurity.GenerateSecurityCredential(_mpesaConfig.InitiatorPassword, _mpesaConfig.CertificateName),
-                CommandID = _mpesaConfig.PayoutCommandID,
-                Amount = transaction.Amount.Amount,
-                PartyA = _mpesaConfig.MerchantId,
-                PartyB = transaction.AccountNumber,
-                Remarks = $"{transaction.TransactionId}_{transaction.AccountNumber}_{transaction.Amount}",
-                QueueTimeOutURL = $"{provider.CallbackUrl}/api/payout/timeout",
-                ResultURL = $"{provider.CallbackUrl}/api/payout/result"
-            };
-
-            var responseDoc = await SendMpesaRequestAsync($"mpesa/b2c/v3/paymentrequest", requestData);
-
-            if (responseDoc.IsSuccess)
-            {
-                using (responseDoc.Value)
+                var requestData = new B2CRequest
                 {
-                    if (responseDoc.Value.RootElement.TryGetProperty("ConversationID", out var convId))
+                    OriginatorConversationID = transaction.TransactionId,
+                    InitiatorName = _mpesaConfig.InitiatorName,
+                    SecurityCredential = MpesaSecurity.GenerateSecurityCredential(_mpesaConfig.InitiatorPassword, _mpesaConfig.CertificateName),
+                    CommandID = _mpesaConfig.PayoutCommandID,
+                    Amount = transaction.Amount.Amount,
+                    PartyA = _mpesaConfig.MerchantId,
+                    PartyB = transaction.AccountNumber,
+                    Remarks = $"{transaction.TransactionId}_{transaction.AccountNumber}_{transaction.Amount}",
+                    QueueTimeOutURL = $"{provider.CallbackUrl}/api/payout/timeout",
+                    ResultURL = $"{provider.CallbackUrl}/api/payout/result"
+                };
+
+                var responseDocResult = await SendMpesaRequestAsync($"mpesa/b2c/v3/paymentrequest", requestData);
+                if(responseDocResult.IsSuccess)
+                    responseDoc = responseDocResult.Value;
+                else
+                {
+                    transaction.SetFailed(string.Join('|', responseDocResult.Errors.ConvertAll(p => p.Message)));
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                transaction.SetUnconfirmed("Unhandled exception");
+                return;
+            }
+
+            if (responseDoc != null)
+            {
+                using (responseDoc)
+                {
+                    if (responseDoc.RootElement.TryGetProperty("ConversationID", out var convId))
                     {
                         transaction.SetInProgress(convId.GetString());
-                        return Result.Ok();
                     }
                     else
                     {
                         transaction.SetFailed("Response did not contain ConversationID");
                         logger.LogError("ConfirmPayoutAsync failed: Response did not contain ConversationID.");
-                        return Result.Fail("no_conversation_id_in_response");
                     }
                 }
-            }
-            else
-            {
-                transaction.SetFailed(string.Join('|', responseDoc.Errors.ConvertAll(p => p.Message)));
-                return responseDoc.ToResult();
             }
         }
         catch (Exception ex)
         {
-            transaction.SetUnconfirmed("unhandled_exception");
             logger.LogError(ex, ex.Message);
-            return Result.Fail(ErrorMessageFormatter.Error());
+            throw;
         }
     }
 
@@ -319,8 +328,8 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
         try
         {
             var transaction =
-                (MpesaPaymentTransaction)await transactionRepository.GetByTransactionIdAsync(request.Result
-                    .OriginatorConversationID);
+                await transactionRepository.GetByTransactionIdAsync(request.Result
+                    .OriginatorConversationID) as MpesaPaymentTransaction;
             if (transaction == null)
             {
                 logger.LogError(
@@ -337,7 +346,6 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
             if (request.Result.ResultCode == (int)ResultCode.Success)
             {
                 transaction.SetCompleted();
-                await transactionRepository.UpdateAsync(transaction);
             }
             else
             {
@@ -353,9 +361,10 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
 
                 transaction.SetFailed(error);
                 transaction.SetProviderTransactionId(request.Result.TransactionID);
-                await transactionRepository.UpdateAsync(transaction);
+                logger.LogWarning($"Transaction {transaction.TransactionId} failed. ResultCode: {request.Result.ResultCode}, ResultDesc: {request.Result.ResultDesc}");
             }
 
+            await transactionRepository.UpdateAsync(transaction);
             return Result.Ok();
         }
         catch (Exception ex)
@@ -366,7 +375,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
 
     }
 
-    public async Task<Result> TransactionStatusQueryAsync(MpesaPaymentTransaction transaction)
+    public async Task TransactionStatusQueryAsync(MpesaPaymentTransaction transaction)
     {
         try
         {
@@ -389,7 +398,6 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
             var responseDoc = await SendMpesaRequestAsync($"{provider.ApiUrl}/mpesa/transactionstatus/v1/query", requestData);
 
             transaction.SetUnconfirmed(string.Empty);
-            return Result.Ok();
         }
         catch (Exception ex)
         {
@@ -402,12 +410,12 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
     {
         try
         {
-            string originatorConversationID = request.Result.ResultParameters.ResultParameter.GetValue<string>("OriginatorConversationID", "");
+            string originatorConversationId = request.Result.ResultParameters.ResultParameter.GetValue<string>("OriginatorConversationID", "");
 
-            var transaction = (MpesaPaymentTransaction)await transactionRepository.GetByTransactionIdAsync(originatorConversationID);
+            var transaction = await transactionRepository.GetByTransactionIdAsync(originatorConversationId) as MpesaPaymentTransaction;
             if (transaction == null)
             {
-                logger.LogError($"Mpesa: Transaction not found for OriginatorConversationID: {originatorConversationID}");
+                logger.LogError($"Mpesa: Transaction not found for OriginatorConversationID: {originatorConversationId}");
                 return Result.Fail(ErrorMessageFormatter.Error("transaction_not_found"));
             }
             if (transaction.MpesaStatus != MpesaPaymentTransactionStatus.UNCONFIRMED)
@@ -415,6 +423,8 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 logger.LogError($"Mpesa: Transaction {transaction.TransactionId} is not in UNCONFIRMED state");
                 return Result.Fail(ErrorMessageFormatter.Error("invalid_transaction_status"));
             }
+
+            Result result = Result.Ok();
 
             if (request.Result.ResultCode == (int)ResultCode.Success)
             {
@@ -425,13 +435,14 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 {
                     transaction.Complete();
                     await transactionRepository.UpdateAsync(transaction);
-                    return Result.Ok();
+                    result = Result.Ok();
                 }
                 else
                 {
                     transaction.SetUnconfirmed(validateData.Value);
+                    await transactionRepository.UpdateAsync(transaction);
                     logger.LogWarning($"Transaction {transaction.TransactionId} validation failed: {validateData.Value}");
-                    return Result.Fail(ErrorMessageFormatter.Error("transaction_validation_failed"));
+                    result =  Result.Fail(ErrorMessageFormatter.Error("transaction_validation_failed"));
                 }
             }
             else
@@ -442,10 +453,12 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
 
                 transaction.SetFailed(error);
                 transaction.SetProviderTransactionId(request.Result.TransactionID);
-                await transactionRepository.UpdateAsync(transaction);
 
-                return Result.Fail(ErrorMessageFormatter.Error("status_processing_failed"));
+                result = Result.Fail(ErrorMessageFormatter.Error("status_processing_failed"));
             }
+
+            await transactionRepository.UpdateAsync(transaction);
+            return result;
         }
         catch (Exception ex)
         {
@@ -456,15 +469,16 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
 
     public async Task<Result> ProcessTimeoutRequestAsync(B2CRequest request)
     {
-        MpesaPaymentTransaction transaction = null;
         try
         {
-            transaction = (MpesaPaymentTransaction)await transactionRepository.GetByTransactionIdAsync(request.OriginatorConversationID);
+            MpesaPaymentTransaction transaction = await transactionRepository.GetByTransactionIdAsync(request.OriginatorConversationID) as MpesaPaymentTransaction;
             if (transaction is not { MpesaStatus: MpesaPaymentTransactionStatus.PENDING })
             {
                 logger.LogError($"Mpesa: Transaction not found for TransID: {request.OriginatorConversationID}");
                 return Result.Fail(ErrorMessageFormatter.Error("transaction_not_found"));
             }
+
+            Result result;
 
             var responseDoc = await SendMpesaRequestAsync($"mpesa/b2c/v3/paymentrequest", request);
             if (responseDoc.IsSuccess)
@@ -472,24 +486,24 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 if (responseDoc.Value.RootElement.TryGetProperty("ConversationID", out var convId))
                 {
                     transaction.SetInProgress(convId.GetString());
-                    await transactionRepository.UpdateAsync(transaction);
-                    return Result.Ok();
+                    result = Result.Ok();
                 }
                 else
                 {
                     transaction.SetFailed(null);
-                    await transactionRepository.UpdateAsync(transaction);
                     logger.LogError("ProcessTimeoutRequestAsync failed: Response did not contain ConversationID.");
-                    return Result.Fail(ErrorMessageFormatter.Error("no_conversation_id"));
+                    result = Result.Fail(ErrorMessageFormatter.Error("no_conversation_id"));
                 }
             }
             else
             {
                 transaction.SetFailed(string.Join('|', responseDoc.Errors.ConvertAll(p => p.Message)));
                 logger.LogError($"Request failed with error");
-                await transactionRepository.UpdateAsync(transaction);
-                return responseDoc.ToResult();
+                result =  responseDoc.ToResult();
             }
+
+            await transactionRepository.UpdateAsync(transaction);
+            return result;
         }
         catch (Exception ex)
         {
@@ -502,7 +516,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
     {
         try
         {
-            var transaction = (MpesaPaymentTransaction)await transactionRepository.GetByTransactionIdAsync(request.OriginalConversationID);
+            var transaction = await transactionRepository.GetByTransactionIdAsync(request.OriginalConversationID) as MpesaPaymentTransaction;
             if (transaction is not { MpesaStatus: MpesaPaymentTransactionStatus.IN_PROGRESS })
             {
                 logger.LogError("Mpesa: Transaction not found for TransID: {TransactionId}", request.OriginalConversationID);
@@ -547,42 +561,5 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
         return Result.Ok(JsonDocument.Parse(content));
     }
 
-
-    public class MpesaRequestException : Exception
-    {
-        public HttpStatusCode StatusCode { get; }
-        public string ResponseContent { get; }
-        public string ErrorMessage { get; }
-
-        public MpesaRequestException(HttpStatusCode statusCode, string responseContent)
-            : base($"HTTP Request failed with status {statusCode}")
-        {
-            StatusCode = statusCode;
-            ResponseContent = responseContent;
-            ErrorMessage = ExtractErrorMessage(responseContent);
-        }
-
-        private static string ExtractErrorMessage(string responseContent)
-        {
-            try
-            {
-                using var document = JsonDocument.Parse(responseContent);
-                if (document.RootElement.TryGetProperty("errorMessage", out JsonElement errorElement))
-                {
-                    return errorElement.GetString();
-                }
-            }
-            catch
-            {
-                return "Unknown error";
-
-            }
-            return "Unknown error";
-        }
-    }
-
-
     #endregion
-
-
 }

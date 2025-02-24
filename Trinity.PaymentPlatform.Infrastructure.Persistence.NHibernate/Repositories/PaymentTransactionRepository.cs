@@ -29,7 +29,7 @@ public class PaymentTransactionRepository(IUnitOfWork unitOfWork) : IPaymentTran
         throw new NotSupportedException();
     }
 
-    public async Task<PaymentTransaction> GetByTransactionIdAsync(string transactionId)
+    public async Task<PaymentTransaction?> GetByTransactionIdAsync(string transactionId)
     {
         return await _unitOfWork.Session.QueryOver<PaymentTransaction>().Where(p => p.TransactionId == transactionId)
             .SingleOrDefaultAsync();
@@ -48,7 +48,7 @@ public class PaymentTransactionRepository(IUnitOfWork unitOfWork) : IPaymentTran
             .Add(Restrictions.Eq(nameof(PaymentTransaction.ProviderId), providerId))
             .Add(Restrictions.Eq(nameof(PaymentTransaction.Type), type))
             .Add(Restrictions.Eq(nameof(PaymentTransaction.Status), status))
-            .Add(Restrictions.Eq(nameof(PaymentTransaction.ModifiedAt),
+            .Add(Restrictions.Lt(nameof(PaymentTransaction.ModifiedAt),
                 DateTime.UtcNow.AddMinutes(-1 * checkDelay).ToUnixTimestampMilliseconds()));
         criteria.AddOrder(Order.Desc(nameof(PaymentTransaction.CreatedAt)));
         criteria.SetMaxResults(limit);
@@ -63,11 +63,20 @@ public class PaymentTransactionRepository(IUnitOfWork unitOfWork) : IPaymentTran
             .Add(Restrictions.Eq(nameof(MpesaPaymentTransaction.ProviderId), providerId))
             .Add(Restrictions.Eq(nameof(MpesaPaymentTransaction.Type), type))
             .Add(Restrictions.Eq(nameof(MpesaPaymentTransaction.MpesaStatus), status))
-            .Add(Restrictions.Eq(nameof(MpesaPaymentTransaction.ModifiedAt),
+            .Add(Restrictions.Lt(nameof(MpesaPaymentTransaction.ModifiedAt),
                 DateTime.UtcNow.AddMinutes(-1 * checkDelay).ToUnixTimestampMilliseconds()));
         criteria.AddOrder(Order.Desc(nameof(PaymentTransaction.CreatedAt)));
         criteria.SetMaxResults(limit);
 
         return await criteria.ListAsync<MpesaPaymentTransaction>();
+    }
+
+    public async Task<bool> FindIfExistsAsync(string transactionReference, TransactionType type)
+    {
+        var query = _unitOfWork.Session.CreateSQLQuery(
+            @"select exists(select 1 from user_wallets_transaction_log where transaction_id = :rId and type=:t)");
+        query.SetParameter("rId", transactionReference);
+        query.SetParameter("t", (int)type);
+        return await query.UniqueResultAsync<bool>();
     }
 }

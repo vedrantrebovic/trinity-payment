@@ -13,7 +13,7 @@ namespace Trinity.PaymentProvider.API.Controllers
     public class PayinController (IMediator mediator): ControllerBase
     {
         [HttpPost("mpesa")]
-        public async Task<IActionResult> CreatePayinStkPushAsync([FromBody] MPesaPayinModel model)
+        public async Task<IActionResult> CreatePayinStkPushAsync([FromBody] MpesaPayinModel model)
         {
             //todo: add client id to request
             return this.Result(await mediator.Send(new CreatePayinRequestCommand(model.UserId, model.Amount, model.CurrencyCode, model.AccountNumber, model.TransactionReference)));

@@ -9,16 +9,20 @@ using Trinity.PaymentPlatform.Model.SharedKernel;
 
 namespace Trinity.PaymentPlatform.Mpesa.Application.Commands;
 
-public record CreatePayinRequestCommand(string UserId, decimal Amount, string CurrencyCode, string AccountNumber, string TransactionReference) :IBaseRequest<long>;
+public record CreatePayoutRequestCommand(int UserId,
+    decimal Amount,
+    string CurrencyCode,
+    string AccountNumber,
+    string TransactionReference):IBaseRequest<long>;
 
-public class CreatePayinRequestCommandHandler(ILogger<CreatePayinRequestCommandHandler> logger, IUnitOfWork unitOfWork, IMpesaPaymentProvider paymentProvider) :IBaseRequestHandler<CreatePayinRequestCommand, long>
+public class CreatePayoutRequestCommandHandler(ILogger<CreatePayoutRequestCommandHandler> logger, IUnitOfWork unitOfWork, IMpesaPaymentProvider paymentProvider) : IBaseRequestHandler<CreatePayoutRequestCommand, long>
 {
-    public async Task<OneOf<long, None, List<IDomainError>, Exception>> Handle(CreatePayinRequestCommand request, CancellationToken cancellationToken)
+    public async Task<OneOf<long, None, List<IDomainError>, Exception>> Handle(CreatePayoutRequestCommand request, CancellationToken cancellationToken)
     {
         try
         {
             unitOfWork.BeginTransaction();
-            var result = await paymentProvider.CreatePayinStkPushAsync(new MpesaPayInRequest(request.UserId,
+            var result = await paymentProvider.CreatePayoutAsync(new MpesaPayoutRequest(request.UserId,
                 request.Amount, request.CurrencyCode, request.AccountNumber, request.TransactionReference));
             if (result.IsFailed)
                 return DomainError.CreateList(result.Errors);

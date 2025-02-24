@@ -35,6 +35,7 @@ public static class ServiceExtension
         services.AddMpesaConfig(configuration);
         services.AddMpesaTokenHandler();
         services.AddHttpClients();
+        services.AddTransient<IMpesaPaymentProvider, MpesaPaymentProvider>();
 
         return services;
     }

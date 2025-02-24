@@ -16,15 +16,15 @@ public interface IMpesaPaymentProvider
     /// <param name="transaction"></param>
     /// <param name="provider"></param>
     /// <returns></returns>
-    Task<Result> ConfirmPayinStkPushAsync(MpesaPaymentTransaction transaction); // send to provider payin
+    Task ConfirmPayinStkPushAsync(MpesaPaymentTransaction transaction); // send to provider payin
     Task<Result> ConfirmPayinAsync(MpesaCallbackRequest request); // callback payin 
-    Task<Result> MPesaExpressQueryAsync(MpesaPaymentTransaction transaction); // status check payin 
+    Task MPesaExpressQueryAsync(MpesaPaymentTransaction transaction); // status check payin 
 
     // Payout
     Task<Result<long>> CreatePayoutAsync(MpesaPayoutRequest request); // create transaction
-    Task<Result> ConfirmPayoutAsync(MpesaPaymentTransaction transaction); // send to provider payout
+    Task ConfirmPayoutAsync(MpesaPaymentTransaction transaction); // send to provider payout
     Task<Result> ProcessB2CResultAsync(B2CResultRequestPayout request); // callback payin
-    Task<Result> TransactionStatusQueryAsync(MpesaPaymentTransaction transaction); // status check payout
+    Task TransactionStatusQueryAsync(MpesaPaymentTransaction transaction); // status check payout
     Task<Result> ProcessPayoutStatusCheckAsync(B2CResultRequestPayout request); // callback status check 
     Task<Result> ProcessTimeoutRequestAsync(B2CRequest request); // timeout callback payout
     Task<Result> ProcessStatusCheckTimeoutRequestAsync(TransactionStatusQueryRequest request); // timeout status check payout 

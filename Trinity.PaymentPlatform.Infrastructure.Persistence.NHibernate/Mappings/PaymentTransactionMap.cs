@@ -22,7 +22,7 @@ public class PaymentTransactionMap:ClassMap<PaymentTransaction>
         Map(x => x.ProviderId, "provider_id");
         Map(x => x.UserId, "user_id");
         Map(x => x.Type, "type").CustomType<TransactionType>();
-        Map(x => x.TransactionId, "transaction_id");
+        Map(x => x.TransactionId, "transaction_id").Unique();
         Map(x => x.ProviderTransactionId, "provider_transaction_id");
         Map(x => x.Error, "error");
         Map(x => x.StatusFinalizationTime, "status_finalization_time").CustomSqlType("timestamp with time zone");
