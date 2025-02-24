@@ -1,7 +1,7 @@
 using Npgsql;
 using Quartz;
 using Serilog;
-using Trinity.PaymentPlatform.Infastructure.ACL.Mpesa;
+using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa;
 using Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate.Extensions;
 using Trinity.PaymentPlatform.Processors.Mpesa;
 using Trinity.PaymentPlatform.Processors.Mpesa.Jobs;

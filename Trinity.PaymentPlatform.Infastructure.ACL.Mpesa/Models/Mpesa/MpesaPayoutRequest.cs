@@ -1,9 +1,9 @@
-﻿namespace Trinity.PaymentPlatform.Infastructure.ACL.Mpesa.Models.Mpesa
+﻿namespace Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Models.Mpesa
 {
-    public class MpesaPayoutRequest
-    {
-        public decimal Amount { get; set; }
-        public int UserId { get; set; }
-        public string AccountNumber { get; set; } 
-    }
+    public record MpesaPayoutRequest(
+        int UserId,
+        decimal Amount,
+        string CurrencyCode,
+        string AccountNumber,
+        string TransactionReference);
 }

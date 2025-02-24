@@ -1,5 +1,5 @@
 ﻿using Quartz;
-using Trinity.PaymentPlatform.Infastructure.ACL.Mpesa.Contracts;
+using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Contracts;
 using Trinity.PaymentPlatform.Model.Enum;
 using Trinity.PaymentPlatform.Model.PaymentTransactionAggregate;
 using Trinity.PaymentPlatform.Model.SeedWork;
@@ -7,27 +7,31 @@ using Trinity.PaymentPlatform.Model.SeedWork;
 namespace Trinity.PaymentPlatform.Processors.Mpesa.Jobs;
 
 [DisallowConcurrentExecution]
-public class PayInCheckJob(ILogger<PayInCheckJob> logger, IServiceProvider serviceProvider) :IJob
+public class PayInCheckJob(ILogger<PayInCheckJob> logger, IUnitOfWork unitOfWork, IPaymentTransactionRepository repository,
+    IMpesaPaymentProvider paymentProvider) :IJob
 {
     public async Task Execute(IJobExecutionContext context)
     {
         try
         {
-            await using var outerScope = serviceProvider.CreateAsyncScope();
-            var outerUnitOfWork = outerScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var outerTransactionRepository = outerScope.ServiceProvider.GetRequiredService<IPaymentTransactionRepository>();
+            unitOfWork.BeginTransaction();
 
-            var transactions = await outerTransactionRepository.GetTransactions(1, TransactionType.PAYIN, MpesaPaymentTransactionStatus.IN_PROGRESS, 5, 20);
+            var transactions = await repository.GetTransactions(1, TransactionType.PAYIN,
+                MpesaPaymentTransactionStatus.IN_PROGRESS, 5, 20);
 
             foreach (var transaction in transactions)
             {
-                await using var innerScope = serviceProvider.CreateAsyncScope();
-                var innerUnitOfWork = innerScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var innerTransactionRepository = innerScope.ServiceProvider.GetRequiredService<IPaymentTransactionRepository>();
-                var mpesaService = innerScope.ServiceProvider.GetRequiredService<IMpesaPaymentProvider>();
-                
-                
+                try
+                {
+                    await paymentProvider.MPesaExpressQueryAsync(transaction);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, e.Message);
+                }
             }
+
+            await unitOfWork.CommitAsync();
         }
         catch (Exception e)
         {
@@ -35,7 +39,7 @@ public class PayInCheckJob(ILogger<PayInCheckJob> logger, IServiceProvider servi
         }
         finally
         {
-
+            await unitOfWork.RollbackAsync();
         }
     }
 }

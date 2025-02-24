@@ -9,7 +9,7 @@ public class MpesaPaymentTransaction:PaymentTransaction
     public virtual MpesaPaymentTransactionStatus MpesaStatus { get; protected set; }
     public virtual string AccountNumber { get; protected set; }
     public virtual string MerchantRequestId { get; protected set; }
-    public virtual string CheckoutRequestId { get; protected set; }
+    public virtual string? CheckoutRequestId { get; protected set; }
     public virtual string ProviderTimestamp { get; protected set; }
 
     protected MpesaPaymentTransaction() { }
@@ -41,8 +41,15 @@ public class MpesaPaymentTransaction:PaymentTransaction
     {
         //todo: check if status change is valid
         MpesaStatus = MpesaPaymentTransactionStatus.IN_PROGRESS;
-        Status = PaymentTransactionStatus.InProgress;
-        return Result.Ok();
+        return base.SetInProgress();
+    }
+
+    public virtual Result SetInProgress(string? checkoutRequestId)
+    {
+        //todo: check if status change is valid
+        MpesaStatus = MpesaPaymentTransactionStatus.IN_PROGRESS;
+        CheckoutRequestId = checkoutRequestId;
+        return base.SetInProgress();
     }
 
     public new virtual Result SetFailed(string? error)
@@ -51,25 +58,30 @@ public class MpesaPaymentTransaction:PaymentTransaction
         MpesaStatus = MpesaPaymentTransactionStatus.FAILED;
         Status = PaymentTransactionStatus.Failed;
         Error = error;
-        base.SetFailed(error);
-        return Result.Ok();
+        return base.SetFailed(error);
     }
 
-    public new virtual Result SetCompleted()
+    public virtual Result Complete()
     {
         //todo: check if status change is valid
         MpesaStatus = MpesaPaymentTransactionStatus.COMPLETED;
         Status = PaymentTransactionStatus.Completed;
-        base.SetCompleted();
-        return Result.Ok();
+        return base.SetCompleted();
+    }
+
+    public new virtual Result SetUnconfirmed(string? error)
+    {
+        //todo: check if status change is valid
+        MpesaStatus = MpesaPaymentTransactionStatus.UNCONFIRMED;
+        Error = error;
+        return base.SetAwaitingConfirmation();
     }
 
     public new virtual Result SetCanceled(string? error)
     {
         MpesaStatus = MpesaPaymentTransactionStatus.CANCELED;
         Status = PaymentTransactionStatus.Cancelled;
-        base.SetCancelled(error);
-        return Result.Ok();
+        return base.SetCancelled(error);
     }
 
     public virtual void SetRequestId(string? merchantRequestId, string? checkoutRequestId)

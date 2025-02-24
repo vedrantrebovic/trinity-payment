@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Trinity.PaymentPlatform.Infastructure.ACL.Mpesa.Models.Mpesa
+namespace Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Models.Mpesa
 {
     public class B2CResultRequestPayout
     {

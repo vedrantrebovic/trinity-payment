@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Trinity.PaymentPlatform.Infastructure.ACL.Mpesa\Trinity.PaymentPlatform.Infastructure.ACL.Mpesa.csproj" />
+    <ProjectReference Include="..\Trinity.PaymentPlatform.Infastructure.ACL.Mpesa\Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.csproj" />
     <ProjectReference Include="..\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate.csproj" />
     <ProjectReference Include="..\Trinity.PaymentPlatform.Shared\Trinity.PaymentPlatform.Shared.csproj" />
   </ItemGroup>

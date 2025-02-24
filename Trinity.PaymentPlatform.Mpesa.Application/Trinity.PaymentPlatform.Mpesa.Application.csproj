@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+    <PackageReference Include="Dapper" Version="2.1.35" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Commands\" />
+    <Folder Include="Dto\" />
+    <Folder Include="Queries\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Trinity.PaymentPlatform.Application.Shared\Trinity.PaymentPlatform.Application.Shared.csproj" />
+    <ProjectReference Include="..\Trinity.PaymentPlatform.Infastructure.ACL.Mpesa\Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.csproj" />
+  </ItemGroup>
+
+</Project>

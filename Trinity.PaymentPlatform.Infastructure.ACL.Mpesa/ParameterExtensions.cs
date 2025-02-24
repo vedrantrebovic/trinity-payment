@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace Trinity.PaymentPlatform.Infastructure.ACL.Mpesa
+namespace Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa
 {
     public interface IParameter
     {

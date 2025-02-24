@@ -14,5 +14,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Trinity.PaymentPlatform.Model\Trinity.PaymentPlatform.Model.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Handlers\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
 
 </Project>

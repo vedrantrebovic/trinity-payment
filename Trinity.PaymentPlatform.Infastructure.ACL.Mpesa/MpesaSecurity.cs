@@ -1,8 +1,11 @@
 ﻿using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using FluentResults;
+using Trinity.PaymentPlatform.Model.PaymentTransactionAggregate;
+using Trinity.PaymentPlatform.Model.Util;
 
-namespace Trinity.PaymentPlatform.Infastructure.ACL.Mpesa;
+namespace Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa;
 
 public static class MpesaSecurity
 {
@@ -11,15 +14,12 @@ public static class MpesaSecurity
     {
         X509Certificate2 cert = GetCertificateFromLocalMachine(certificateSubjectName);
 
-        using (RSA publicKey = cert.GetRSAPublicKey())
-        {
-           
-            byte[] encryptedBytes = publicKey.Encrypt(
-                Encoding.UTF8.GetBytes(initiatorPassword),
-                RSAEncryptionPadding.Pkcs1);
+        using RSA publicKey = cert.GetRSAPublicKey();
+        byte[] encryptedBytes = publicKey.Encrypt(
+            Encoding.UTF8.GetBytes(initiatorPassword),
+            RSAEncryptionPadding.Pkcs1);
 
-            return Convert.ToBase64String(encryptedBytes);
-        }
+        return Convert.ToBase64String(encryptedBytes);
     }
 
     private static X509Certificate2 GetCertificateFromLocalMachine(string subjectName)
@@ -49,21 +49,20 @@ public static class MpesaSecurity
     }
 
 
-    public static string Validate(PaymentTransaction transaction, decimal amount, string accountNumber = null,  string timestamp = null )
+    public static Result<string> Validate(MpesaPaymentTransaction transaction, decimal amount, string? accountNumber = null,  string? timestamp = null )
     {
-        if (transaction.Amount != amount)
+        if (transaction.Amount.Amount != amount)
         {
-            return "Invalid Amount";
+            return ErrorMessageFormatter.FailWithError("invalid_amount");
         }
         if (!string.IsNullOrEmpty(accountNumber) && accountNumber != transaction.AccountNumber)
         {
-            return "Invalid Account Number";
+            return ErrorMessageFormatter.FailWithError("invalid_account_number");
         }
-        if (!string.IsNullOrEmpty(timestamp)  && timestamp != transaction.Timestamp)
+        if (!string.IsNullOrEmpty(timestamp) && timestamp != transaction.ProviderTimestamp)
         {
-            return "Invalid Timestamp";
+            return ErrorMessageFormatter.FailWithError("invalid_timestamp");
         }
-        return "OK";
+        return Result.Ok();
     }
-
 }
