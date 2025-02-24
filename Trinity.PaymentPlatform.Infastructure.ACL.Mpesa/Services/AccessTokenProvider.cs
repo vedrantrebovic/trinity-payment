@@ -15,8 +15,8 @@ public class AccessTokenProvider(ILogger<AccessTokenProvider> logger, IMemoryCac
 {
     private readonly string _cacheKey = $"Mpesa:Token:{PaymentProviderId}";
     private const int PaymentProviderId = 1;
-    private string _apiKey = mpesaConfig.Value.CustomerKey;
-    private string _apiSecret = mpesaConfig.Value.CustomerSecret;
+    private readonly string _apiKey = mpesaConfig.Value.CustomerKey;
+    private readonly string _apiSecret = mpesaConfig.Value.CustomerSecret;
 
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("MpesaUnauthorized");
 
@@ -42,16 +42,19 @@ public class AccessTokenProvider(ILogger<AccessTokenProvider> logger, IMemoryCac
             var responseContent = await response.Content.ReadAsStringAsync();
             var tokenResponse = JsonSerializer.Deserialize<OAuthResponse>(responseContent);
 
-            string token = tokenResponse.AccessToken;
+            string? token = tokenResponse?.AccessToken;
 
-            int expiresInSeconds = Convert.ToInt16(tokenResponse.ExpiresIn);
-            var cacheEntryOptions = new MemoryCacheEntryOptions
+            if (!string.IsNullOrEmpty(token))
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(expiresInSeconds - 60)
-            };
+                int expiresInSeconds = Convert.ToInt16(tokenResponse?.ExpiresIn);
+                var cacheEntryOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(expiresInSeconds - 60)
+                };
 
-            memoryCache.Set(_cacheKey, token, cacheEntryOptions);
-            return Result.Ok();
+                memoryCache.Set(_cacheKey, token, cacheEntryOptions);
+                return Result.Ok();
+            }
         }
 
         var body = response.Content.ReadAsStringAsync();

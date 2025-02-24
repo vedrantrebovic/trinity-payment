@@ -8,14 +8,15 @@ using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Models.Mpesa;
 using Trinity.PaymentPlatform.Model.Enum;
 using Trinity.PaymentPlatform.Model.PaymentProviderAggregate;
 using Trinity.PaymentPlatform.Model.PaymentTransactionAggregate;
+using Trinity.PaymentPlatform.Model.PaymentTransactionOutboxAggregate;
 using Trinity.PaymentPlatform.Model.SharedKernel;
 using Trinity.PaymentPlatform.Model.Util;
 
-namespace Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa;
+namespace Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Services;
 
 
 public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPaymentTransactionRepository transactionRepository, IPaymentProviderRepository paymentProviderRepository,
-    IOptions<MpesaConfig> mpesaConfig, IHttpClientFactory httpClientFactory) : IMpesaPaymentProvider
+    IPaymentTransactionOutboxRepository outboxRepository, IOptions<MpesaConfig> mpesaConfig, IHttpClientFactory httpClientFactory) : IMpesaPaymentProvider
 {
     private readonly int _providerId = 1;
     private readonly MpesaConfig _mpesaConfig = mpesaConfig.Value;
@@ -71,12 +72,12 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
             {
                 var requestData = new
                 {
-                    BusinessShortCode = _mpesaConfig.BusinessShortCode,
+                    _mpesaConfig.BusinessShortCode,
                     Password = MpesaSecurity.GeneratePassword(_mpesaConfig.BusinessShortCode,
                         _mpesaConfig.PayinStkPushKey, timestamp),
                     Timestamp = timestamp,
                     TransactionType = _mpesaConfig.PayinStkPushTransactionType,
-                    Amount = transaction.Amount.Amount,
+                    transaction.Amount.Amount,
                     PartyA = transaction.AccountNumber,
                     PartyB = _mpesaConfig.BusinessShortCode,
                     PhoneNumber = transaction.AccountNumber,
@@ -151,7 +152,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
 
             if (request.Body.StkCallback.ResultCode == (int)ResultCode.Success)
             {
-                decimal amount = request.Body.StkCallback.CallbackMetadata.Item.GetValue<decimal>("Amount", 0m);
+                decimal amount = request.Body.StkCallback.CallbackMetadata.Item.GetValue("Amount", 0m);
 
                 var validateData = MpesaSecurity.Validate(transaction, amount);
                 if (validateData.IsSuccess)
@@ -188,7 +189,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
         {
             var requestData = new
             {
-                BusinessShortCode = _mpesaConfig.BusinessShortCode,
+                _mpesaConfig.BusinessShortCode,
                 Password = MpesaSecurity.GeneratePassword(_mpesaConfig.BusinessShortCode, _mpesaConfig.PayinStkPushKey, transaction.ProviderTimestamp),
                 Timestamp = transaction.ProviderTimestamp,
                 CheckoutRequestID = transaction.CheckoutRequestId
@@ -285,7 +286,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 };
 
                 var responseDocResult = await SendMpesaRequestAsync($"mpesa/b2c/v3/paymentrequest", requestData);
-                if(responseDocResult.IsSuccess)
+                if (responseDocResult.IsSuccess)
                     responseDoc = responseDocResult.Value;
                 else
                 {
@@ -410,7 +411,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
     {
         try
         {
-            string originatorConversationId = request.Result.ResultParameters.ResultParameter.GetValue<string>("OriginatorConversationID", "");
+            string originatorConversationId = request.Result.ResultParameters.ResultParameter.GetValue("OriginatorConversationID", "");
 
             var transaction = await transactionRepository.GetByTransactionIdAsync(originatorConversationId) as MpesaPaymentTransaction;
             if (transaction == null)
@@ -428,7 +429,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
 
             if (request.Result.ResultCode == (int)ResultCode.Success)
             {
-                decimal amount = request.Result.ResultParameters.ResultParameter.GetValue<decimal>("Amount", 0m);
+                decimal amount = request.Result.ResultParameters.ResultParameter.GetValue("Amount", 0m);
 
                 var validateData = MpesaSecurity.Validate(transaction, amount);
                 if (validateData.IsSuccess)
@@ -442,7 +443,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                     transaction.SetUnconfirmed(validateData.Value);
                     await transactionRepository.UpdateAsync(transaction);
                     logger.LogWarning($"Transaction {transaction.TransactionId} validation failed: {validateData.Value}");
-                    result =  Result.Fail(ErrorMessageFormatter.Error("transaction_validation_failed"));
+                    result = Result.Fail(ErrorMessageFormatter.Error("transaction_validation_failed"));
                 }
             }
             else
@@ -499,7 +500,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
             {
                 transaction.SetFailed(string.Join('|', responseDoc.Errors.ConvertAll(p => p.Message)));
                 logger.LogError($"Request failed with error");
-                result =  responseDoc.ToResult();
+                result = responseDoc.ToResult();
             }
 
             await transactionRepository.UpdateAsync(transaction);

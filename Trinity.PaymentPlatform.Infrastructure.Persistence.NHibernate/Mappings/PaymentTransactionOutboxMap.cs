@@ -19,7 +19,7 @@ public class PaymentTransactionOutboxMap:ClassMap<PaymentTransactionOutbox>
 
         #endregion
 
-        Map(x => x.TransactionReference, "transaction_reference");
+        Map(x => x.TransactionReference, "transaction_reference").Unique();
         Map(x => x.ProviderTransactionId, "provider_transaction_id");
         Map(x => x.TransactionId, "transaction_id");
         Map(x => x.CallbackUrl, "callback_url");
