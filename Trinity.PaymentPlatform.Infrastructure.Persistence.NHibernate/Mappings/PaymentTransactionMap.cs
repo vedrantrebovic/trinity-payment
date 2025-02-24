@@ -27,6 +27,8 @@ public class PaymentTransactionMap:ClassMap<PaymentTransaction>
         Map(x => x.Error, "error");
         Map(x => x.StatusFinalizationTime, "status_finalization_time").CustomSqlType("timestamp with time zone");
         Map(x => x.Status, "status").CustomType<PaymentTransactionStatus>();
+        Map(x => x.Finalized, "finalized").Default("false");
+        Map(x => x.OutboxCreated, "outbox_created").Default("false");
 
         Component<Money>(x => x.Amount, p =>
         {

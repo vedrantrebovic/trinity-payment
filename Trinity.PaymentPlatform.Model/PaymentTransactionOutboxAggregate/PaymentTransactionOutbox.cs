@@ -1,4 +1,5 @@
 ﻿using Trinity.PaymentPlatform.Model.Enum;
+using Trinity.PaymentPlatform.Model.PaymentTransactionAggregate;
 using Trinity.PaymentPlatform.Model.SeedWork;
 using Trinity.PaymentPlatform.Model.SharedKernel;
 
@@ -47,6 +48,12 @@ public class PaymentTransactionOutbox:Entity<long>,IAggregateRoot
     {
         return new PaymentTransactionOutbox(transactionReference, providerTransactionId, transactionId, amount, url,
             success, error, TransactionType.PAYOUT);
+    }
+
+    public static PaymentTransactionOutbox Create(PaymentTransaction transaction, string url)
+    {
+        return new PaymentTransactionOutbox(transaction.TransactionId, transaction.ProviderTransactionId, transaction.Id, transaction.Amount, url, 
+            transaction.Status == PaymentTransactionStatus.Completed, transaction.Error, transaction.Type);
     }
 
     #endregion

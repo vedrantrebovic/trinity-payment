@@ -16,6 +16,8 @@ public class PaymentTransaction : Entity<long>, IAggregateRoot
     public virtual string? Error { get; protected set; }
     public virtual DateTime? StatusFinalizationTime { get; protected set; }
     public virtual PaymentTransactionStatus Status { get; protected set; }
+    public virtual bool Finalized { get; protected set; }
+    public virtual bool OutboxCreated { get; protected set; }
 
     protected PaymentTransaction()
     {
@@ -56,6 +58,8 @@ public class PaymentTransaction : Entity<long>, IAggregateRoot
         //todo: add state transition validation
         Status = PaymentTransactionStatus.Completed;
         StatusFinalizationTime = DateTime.UtcNow;
+        Finalized = true;
+        OutboxCreated = false;
         return Result.Ok();
     }
 
@@ -65,6 +69,8 @@ public class PaymentTransaction : Entity<long>, IAggregateRoot
         Status = PaymentTransactionStatus.Rejected;
         Error = error;
         StatusFinalizationTime = DateTime.UtcNow;
+        Finalized = true;
+        OutboxCreated = false;
         return Result.Ok();
     }
 
@@ -74,6 +80,8 @@ public class PaymentTransaction : Entity<long>, IAggregateRoot
         Status = PaymentTransactionStatus.Cancelled;
         Error = error;
         StatusFinalizationTime = DateTime.UtcNow;
+        Finalized = true;
+        OutboxCreated = false;
         return Result.Ok();
     }
 
@@ -83,7 +91,14 @@ public class PaymentTransaction : Entity<long>, IAggregateRoot
         Status = PaymentTransactionStatus.Failed;
         Error = error;
         StatusFinalizationTime = DateTime.UtcNow;
+        Finalized = true;
+        OutboxCreated = false;
         return Result.Ok();
+    }
+
+    public virtual void SetOutboxCreated()
+    {
+        OutboxCreated = true;
     }
 }
 

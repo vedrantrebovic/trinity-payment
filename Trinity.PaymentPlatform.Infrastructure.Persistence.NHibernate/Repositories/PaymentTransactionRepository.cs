@@ -79,4 +79,11 @@ public class PaymentTransactionRepository(IUnitOfWork unitOfWork) : IPaymentTran
         query.SetParameter("t", (int)type);
         return await query.UniqueResultAsync<bool>();
     }
+
+    public async Task<IList<PaymentTransaction>> GetFinalizedForOutbox()
+    {
+        return await _unitOfWork.Session.QueryOver<PaymentTransaction>()
+            .Where(p => p.Finalized && !p.OutboxCreated)
+            .ListAsync();
+    }
 }

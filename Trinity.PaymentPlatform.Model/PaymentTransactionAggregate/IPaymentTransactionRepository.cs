@@ -10,4 +10,5 @@ public interface IPaymentTransactionRepository:IRepository<PaymentTransaction, l
     Task<IList<PaymentTransaction>> GetTransactions(int providerId, TransactionType type, PaymentTransactionStatus status, int checkDelay, int limit);
     Task<IList<MpesaPaymentTransaction>> GetTransactions(int providerId, TransactionType type, MpesaPaymentTransactionStatus status, int checkDelay, int limit);
     Task<bool> FindIfExistsAsync(string transactionReference, TransactionType type);
+    Task<IList<PaymentTransaction>> GetFinalizedForOutbox();
 }
