@@ -25,7 +25,6 @@ public class ProcessPayInTransactionJob(ILogger<ProcessPayInTransactionJob> logg
                     // Process transaction
                     await paymentProvider.ConfirmPayinStkPushAsync(transaction);
 
-                    //todo: create outbox transaction if needed
                     await repository.UpdateAsync(transaction);
                 }
                 catch (Exception e)
