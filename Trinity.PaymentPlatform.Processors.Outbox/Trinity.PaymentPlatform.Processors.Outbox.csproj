@@ -14,14 +14,14 @@
     <PackageReference Include="Quartz" Version="3.13.1" />
     <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.13.1" />
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.13.1" />
-    <PackageReference Include="Npgsql.Json.NET" Version="9.0.2" />
-    <PackageReference Include="Npgsql" Version="9.0.2" />
-    <PackageReference Include="Npgsql.DependencyInjection" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.2" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate.csproj" />
     <ProjectReference Include="..\Trinity.PaymentPlatform.Model\Trinity.PaymentPlatform.Model.csproj" />
+    <ProjectReference Include="..\Trinity.PaymentPlatform.Shared\Trinity.PaymentPlatform.Shared.csproj" />
   </ItemGroup>
 </Project>

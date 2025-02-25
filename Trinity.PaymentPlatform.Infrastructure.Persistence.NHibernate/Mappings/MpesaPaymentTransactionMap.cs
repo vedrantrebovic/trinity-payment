@@ -14,5 +14,6 @@ public class MpesaPaymentTransactionMap: SubclassMap<MpesaPaymentTransaction>
         Map(x => x.AccountNumber, "account_number");
         Map(x => x.MerchantRequestId, "merchant_request_id");
         Map(x => x.CheckoutRequestId, "checkout_request_id");
+        Map(x => x.ProviderTimestamp, "provider_timestamp");
     }
 }

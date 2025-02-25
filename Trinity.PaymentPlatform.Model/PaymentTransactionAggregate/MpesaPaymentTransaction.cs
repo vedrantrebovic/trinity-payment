@@ -56,7 +56,6 @@ public class MpesaPaymentTransaction:PaymentTransaction
     {
         //todo: check if status change is valid
         MpesaStatus = MpesaPaymentTransactionStatus.FAILED;
-        Status = PaymentTransactionStatus.Failed;
         Error = error;
         return base.SetFailed(error);
     }

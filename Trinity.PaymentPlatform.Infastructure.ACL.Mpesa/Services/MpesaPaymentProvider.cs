@@ -143,7 +143,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 request.Body.StkCallback.MerchantRequestID,
                 request.Body.StkCallback.CheckoutRequestID);
 
-            if (transaction is not { MpesaStatus: MpesaPaymentTransactionStatus.IN_PROGRESS })
+            if (transaction == null || transaction.MpesaStatus != MpesaPaymentTransactionStatus.IN_PROGRESS)
             {
                 logger.LogError("Mpesa: Transaction {MerchantRequestID} not found or not in progress",
                     request.Body.StkCallback.MerchantRequestID);
@@ -157,7 +157,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 var validateData = MpesaSecurity.Validate(transaction, amount);
                 if (validateData.IsSuccess)
                 {
-                    transaction.SetCompleted();
+                    transaction.Complete();
                 }
                 else
                 {
@@ -202,7 +202,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 var expressResponse = JsonSerializer.Deserialize<ExpressResponse>(content);
                 if (expressResponse.ResultCode == "0")
                 {
-                    transaction.SetCompleted();
+                    transaction.Complete();
                     return;
                 }
                 else
@@ -346,7 +346,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
 
             if (request.Result.ResultCode == (int)ResultCode.Success)
             {
-                transaction.SetCompleted();
+                transaction.Complete();
             }
             else
             {

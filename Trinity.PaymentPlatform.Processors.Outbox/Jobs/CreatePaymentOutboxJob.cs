@@ -1,6 +1,4 @@
 ﻿using Quartz;
-using Trinity.PaymentPlatform.Model.Enum;
-using Trinity.PaymentPlatform.Model.PaymentProviderAggregate;
 using Trinity.PaymentPlatform.Model.PaymentTransactionAggregate;
 using Trinity.PaymentPlatform.Model.PaymentTransactionOutboxAggregate;
 using Trinity.PaymentPlatform.Model.SeedWork;

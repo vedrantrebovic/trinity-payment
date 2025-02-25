@@ -35,7 +35,7 @@ public class PaymentTransactionRepository(IUnitOfWork unitOfWork) : IPaymentTran
             .SingleOrDefaultAsync();
     }
 
-    public async Task<MpesaPaymentTransaction> GetTransactionByMerchantIdAsync(string merchantRequestId, string checkoutRequestId)
+    public async Task<MpesaPaymentTransaction?> GetTransactionByMerchantIdAsync(string merchantRequestId, string checkoutRequestId)
     {
         return await _unitOfWork.Session.QueryOver<MpesaPaymentTransaction>()
             .Where(p => p.TransactionId == merchantRequestId && p.ProviderTransactionId == checkoutRequestId)

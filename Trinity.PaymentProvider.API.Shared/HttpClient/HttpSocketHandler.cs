@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
 
 namespace Trinity.PaymentProvider.API.Shared.HttpClient;
 
