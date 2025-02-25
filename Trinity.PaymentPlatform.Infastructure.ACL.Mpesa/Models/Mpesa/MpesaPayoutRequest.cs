@@ -1,7 +1,7 @@
 ﻿namespace Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Models.Mpesa
 {
     public record MpesaPayoutRequest(
-        int UserId,
+        string UserId,
         decimal Amount,
         string CurrencyCode,
         string AccountNumber,

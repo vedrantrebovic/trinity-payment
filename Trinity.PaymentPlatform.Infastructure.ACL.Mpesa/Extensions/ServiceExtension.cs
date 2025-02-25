@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Contracts;
 using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Handlers;
 using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Services;
+using Trinity.PaymentPlatform.Model.Contracts;
 
 namespace Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Extensions;
 
@@ -35,6 +36,7 @@ public static class ServiceExtension
         services.AddMpesaConfig(configuration);
         services.AddMpesaTokenHandler();
         services.AddHttpClients();
+        services.AddKeyedTransient<ITransactionInitiator, MpesaTransactionInitiator>(MpesaTransactionInitiator.Name);
         services.AddTransient<IMpesaPaymentProvider, MpesaPaymentProvider>();
 
         return services;

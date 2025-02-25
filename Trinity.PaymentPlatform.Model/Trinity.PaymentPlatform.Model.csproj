@@ -10,6 +10,7 @@
     <PackageReference Include="ISO.4217.CurrencyCodes" Version="1.0.10" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Contracts\" />
     <Folder Include="PaymentProviderAggregate\" />
   </ItemGroup>
 

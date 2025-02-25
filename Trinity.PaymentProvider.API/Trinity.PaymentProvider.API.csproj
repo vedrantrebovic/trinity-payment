@@ -18,10 +18,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Trinity.PaymentPlatform.Application\Trinity.PaymentPlatform.Application.csproj" />
     <ProjectReference Include="..\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate.csproj" />
     <ProjectReference Include="..\Trinity.PaymentPlatform.Mpesa.Application\Trinity.PaymentPlatform.Mpesa.Application.csproj" />
     <ProjectReference Include="..\Trinity.PaymentPlatform.Shared\Trinity.PaymentPlatform.Shared.csproj" />
     <ProjectReference Include="..\Trinity.PaymentProvider.API.Shared\Trinity.PaymentProvider.API.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
   </ItemGroup>
 
 </Project>

@@ -17,6 +17,7 @@
     </ItemGroup>
   
     <ItemGroup>
+      <ProjectReference Include="..\Trinity.PaymentPlatform.Infastructure.ACL.Mpesa\Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.csproj" />
       <ProjectReference Include="..\Trinity.PaymentPlatform.Model\Trinity.PaymentPlatform.Model.csproj" />
     </ItemGroup>
  

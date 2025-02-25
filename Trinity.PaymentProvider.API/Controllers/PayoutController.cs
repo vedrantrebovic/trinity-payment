@@ -1,6 +1,7 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Trinity.PaymentPlatform.Application.Commands;
+using Trinity.PaymentPlatform.Application.Models;
 using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Models.Mpesa;
 using Trinity.PaymentPlatform.Mpesa.Application.Commands;
 using Trinity.PaymentProvider.API.Shared.ActionResults;
@@ -14,8 +15,7 @@ namespace Trinity.PaymentProvider.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreatePayoutRequest([FromBody] MpesaPayoutModel model)
         {
-            return this.Result(await mediator.Send(new CreatePayoutRequestCommand(model.UserId, model.Amount,
-                model.CurrencyCode, model.AccountNumber, model.TransactionReference)));
+            return this.Result(await mediator.Send(new CreatePayoutRequestCommand(1, model)));
         }
 
         [HttpPost("result")]
