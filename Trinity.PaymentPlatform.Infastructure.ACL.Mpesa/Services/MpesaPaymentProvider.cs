@@ -207,7 +207,7 @@ public class MpesaPaymentProvider(ILogger<MpesaPaymentProvider> logger, IPayment
                 }
                 else
                 {
-                    string resultDesc = responseDoc.Value.RootElement.GetProperty("ResponseDescription").GetString();
+                    string resultDesc = responseDoc.Value.RootElement.GetProperty("ResultDesc").GetString()?? responseDoc.Value.RootElement.GetProperty("ResponseDescription").GetString();
                     transaction.SetFailed(resultDesc);
                     logger.LogError($"Mpesa: Transaction {transaction.TransactionId} failed with response {resultDesc}");
                     return;
