@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Trinity.PaymentPlatform.Application.Shared\Trinity.PaymentPlatform.Application.Shared.csproj" />
+    <ProjectReference Include="..\Trinity.PaymentPlatform.Infrastructure.ACL.Airtel\Trinity.PaymentPlatform.Infrastructure.ACL.Airtel.csproj" />
   </ItemGroup>
 
   <ItemGroup>

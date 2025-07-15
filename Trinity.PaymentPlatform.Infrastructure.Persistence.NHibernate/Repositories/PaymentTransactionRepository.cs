@@ -86,4 +86,23 @@ public class PaymentTransactionRepository(IUnitOfWork unitOfWork) : IPaymentTran
             .Where(p => p.Finalized && !p.OutboxCreated)
             .ListAsync();
     }
+
+    public async Task<AirtelPaymentTransaction?> GetAirtelTransactionIdAsync(string transactionId)
+    {
+        return await _unitOfWork.Session.QueryOver<AirtelPaymentTransaction>().Where(p => p.TransactionId == transactionId).SingleOrDefaultAsync();
+    }
+
+    public async Task<IList<AirtelPaymentTransaction>> GetAirtelTransactions(int providerId, TransactionType type, AirtelPaymentTransactionStatus status, int checkDelay, int limit)
+    {
+        var criteria = _unitOfWork.Session.CreateCriteria<AirtelPaymentTransaction>()
+           .Add(Restrictions.Eq(nameof(AirtelPaymentTransaction.ProviderId), providerId))
+           .Add(Restrictions.Eq(nameof(AirtelPaymentTransaction.Type), type))
+           .Add(Restrictions.Eq(nameof(AirtelPaymentTransaction.AirtelStatus), status))
+           .Add(Restrictions.Lt(nameof(AirtelPaymentTransaction.ModifiedAt),
+               DateTime.UtcNow.AddMinutes(-1 * checkDelay).ToUnixTimestampMilliseconds()));
+        criteria.AddOrder(Order.Desc(nameof(PaymentTransaction.CreatedAt)));
+        criteria.SetMaxResults(limit);
+
+        return await criteria.ListAsync<AirtelPaymentTransaction>();
+    }
 }

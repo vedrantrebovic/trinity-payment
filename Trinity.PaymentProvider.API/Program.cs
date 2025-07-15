@@ -1,8 +1,10 @@
 using NHibernate.Transaction;
 using Npgsql;
 using Serilog;
+using Trinity.PaymentPlatform.Airtel.Application.Commands;
 using Trinity.PaymentPlatform.Application.Commands;
 using Trinity.PaymentPlatform.Application.Factory;
+using Trinity.PaymentPlatform.Infrastructure.ACL.Airtel.Extensions;
 using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Extensions;
 using Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate.Extensions;
 using Trinity.PaymentPlatform.Model.Contracts;
@@ -29,18 +31,20 @@ builder.Host.UseSerilog((_, configuration) =>
     configuration.ConfigureBaseLogging("payment_platform_api", builder.Configuration, builder.Environment.ContentRootPath);
 });
 
-builder.Services.AddNpgsqlDataSource(builder.Configuration.GetConnectionString("default"), sourceBuilder =>
+builder.Services.AddNpgsqlDataSource(builder.Configuration.GetConnectionString("default_payment"), sourceBuilder =>
 {
     sourceBuilder.UseJsonNet();
 });
 
 builder.Services.AddMemoryCache();
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(CreatePayinRequestCommand).Assembly, typeof(ProcessB2CResultCommand).Assembly));
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(CreatePayinRequestCommand).Assembly, typeof(ProcessB2CResultCommand).Assembly,
+    typeof(ProcessAirtelPayinCallbackCommandHandler).Assembly ));
 //builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<CreatePayinRequestCommand>());
 builder.Services.AddNHibernate();
 builder.Services.AddPaymentRepositories();
 builder.Services.AddMpesa(builder.Configuration);
+builder.Services.AddAirtel(builder.Configuration);
 builder.Services.AddTransient<ITransactionInitiatorFactory, TransactionInitiatorFactory>();
 builder.Services.AddTransient<IPayInTransactionInitiationParamsConverter, PayInTransactionInitiationParamsConverter>();
 builder.Services.AddTransient<IPayoutTransactionInitiationParamsConverter, PayoutTransactionInitiationParamsConverter>();

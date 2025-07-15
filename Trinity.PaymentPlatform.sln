@@ -37,6 +37,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trinity.PaymentPlatform.Pro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trinity.PaymentPlatform.Application", "Trinity.PaymentPlatform.Application\Trinity.PaymentPlatform.Application.csproj", "{368265B3-9B9E-4DA4-8641-F4AE9C355DA3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trinity.PaymentPlatform.Infrastructure.ACL.Airtel", "Trinity.PaymentPlatform.Infrastructure.ACL.Airtel\Trinity.PaymentPlatform.Infrastructure.ACL.Airtel.csproj", "{0CB9FB44-21D3-494A-8432-DE891308FAEC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trinity.PaymentPlatform.Processors.Airtel", "Trinity.PaymentPlatform.Processors.Airtel\Trinity.PaymentPlatform.Processors.Airtel.csproj", "{905B16C0-C81E-41D3-910B-701E327DDBF0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trinity.PaymentPlatform.Airtel.Application", "Trinity.PaymentPlatform.Airtel.Application\Trinity.PaymentPlatform.Airtel.Application.csproj", "{9A65AB7F-0242-4FE1-897D-DF9F5EB3F9A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +93,18 @@ Global
 		{368265B3-9B9E-4DA4-8641-F4AE9C355DA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{368265B3-9B9E-4DA4-8641-F4AE9C355DA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{368265B3-9B9E-4DA4-8641-F4AE9C355DA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CB9FB44-21D3-494A-8432-DE891308FAEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CB9FB44-21D3-494A-8432-DE891308FAEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CB9FB44-21D3-494A-8432-DE891308FAEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CB9FB44-21D3-494A-8432-DE891308FAEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{905B16C0-C81E-41D3-910B-701E327DDBF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{905B16C0-C81E-41D3-910B-701E327DDBF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{905B16C0-C81E-41D3-910B-701E327DDBF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{905B16C0-C81E-41D3-910B-701E327DDBF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A65AB7F-0242-4FE1-897D-DF9F5EB3F9A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A65AB7F-0242-4FE1-897D-DF9F5EB3F9A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A65AB7F-0242-4FE1-897D-DF9F5EB3F9A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A65AB7F-0242-4FE1-897D-DF9F5EB3F9A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -103,5 +121,8 @@ Global
 		{549A84BE-C250-4AD4-8C43-E398AE3CE0A8} = {EAF77AC8-5B98-4746-BEE5-88CA70D50F46}
 		{884A20F5-B1B2-4B05-8F97-C74EF7696909} = {35C9C616-3B4A-4729-B77F-EB3A7C6C3ADC}
 		{368265B3-9B9E-4DA4-8641-F4AE9C355DA3} = {EAF77AC8-5B98-4746-BEE5-88CA70D50F46}
+		{0CB9FB44-21D3-494A-8432-DE891308FAEC} = {004669E7-6646-48B8-B954-B17C0DC58309}
+		{905B16C0-C81E-41D3-910B-701E327DDBF0} = {35C9C616-3B4A-4729-B77F-EB3A7C6C3ADC}
+		{9A65AB7F-0242-4FE1-897D-DF9F5EB3F9A9} = {EAF77AC8-5B98-4746-BEE5-88CA70D50F46}
 	EndGlobalSection
 EndGlobal

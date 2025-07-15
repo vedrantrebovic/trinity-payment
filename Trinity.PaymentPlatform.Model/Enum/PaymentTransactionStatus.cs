@@ -11,4 +11,5 @@ public enum PaymentTransactionStatus
     Rejected = 20,
     Cancelled =30,
     Failed = 40,
+    Refunded = 50,
 }

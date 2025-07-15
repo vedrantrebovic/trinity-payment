@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>dotnet-Trinity.PaymentPlatform.Processors.Airtel-a5ac85c1-e40b-4215-8a28-ab865b5312a2</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="airtel_v2_public.pem" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="..\Trinity.PaymentPlatform.Infrastructure.ACL.Airtel\Helper\airtel_pub.pem" Link="airtel_pub.pem">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="airtel_v2_public.pem">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+		<PackageReference Include="Quartz" Version="3.13.1" />
+		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.13.1" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.13.1" />
+		<PackageReference Include="Npgsql.Json.NET" Version="9.0.2" />
+		<PackageReference Include="Npgsql" Version="9.0.2" />
+		<PackageReference Include="Npgsql.DependencyInjection" Version="9.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.2" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Trinity.PaymentPlatform.Infrastructure.ACL.Airtel\Trinity.PaymentPlatform.Infrastructure.ACL.Airtel.csproj" />
+		<ProjectReference Include="..\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate.csproj" />
+		<ProjectReference Include="..\Trinity.PaymentPlatform.Shared\Trinity.PaymentPlatform.Shared.csproj" />
+	</ItemGroup>
+</Project>

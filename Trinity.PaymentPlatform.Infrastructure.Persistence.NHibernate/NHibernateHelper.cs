@@ -13,7 +13,7 @@ namespace Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate;
 
 public class NHibernateHelper(IConfiguration configuration) : INHibernateHelper
     {
-        private readonly string _connectionString = configuration["ConnectionStrings:default"];
+        private readonly string _connectionString = configuration["ConnectionStrings:default_payment"];
         private readonly object _lockObject = new object();
         private ISessionFactory? _sessionFactory;
         private short _batchSize = 20;
@@ -68,6 +68,7 @@ public class NHibernateHelper(IConfiguration configuration) : INHibernateHelper
                 .ExposeConfiguration(cfg =>
                 {
 #if DEBUG
+                    //new SchemaExport(cfg).Execute(true,true, true);
                     new SchemaUpdate(cfg).Execute(false, true);
 #endif
                     cfg.DataBaseIntegration(x =>
