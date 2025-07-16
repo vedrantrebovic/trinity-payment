@@ -12,7 +12,9 @@ public static class MpesaSecurity
   
     public static string GenerateSecurityCredential(string initiatorPassword, string certificateSubjectName)
     {
-        X509Certificate2 cert = GetCertificateFromLocalMachine(certificateSubjectName);
+        X509Certificate2? cert = GetCertificateFromLocalMachine(certificateSubjectName);
+        if(cert==null)
+            throw new Exception($"Certificate with subject name '{certificateSubjectName}' was not found in the Local Machine store.");
 
         using RSA publicKey = cert.GetRSAPublicKey();
         byte[] encryptedBytes = publicKey.Encrypt(
@@ -22,23 +24,27 @@ public static class MpesaSecurity
         return Convert.ToBase64String(encryptedBytes);
     }
 
-    private static X509Certificate2 GetCertificateFromLocalMachine(string subjectName)
+    private static X509Certificate2? GetCertificateFromLocalMachine(string subjectName)
     {
-        using (X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
+
+        foreach (StoreName storeName in (StoreName[])
+                 Enum.GetValues(typeof(StoreName)))
         {
-            store.Open(OpenFlags.ReadOnly);
-
-     
-            X509Certificate2Collection certCollection = store.Certificates.Find(
-                X509FindType.FindBySubjectName, subjectName, validOnly: false);
-
-            if (certCollection.Count == 0)
+            using (X509Store store = new X509Store(storeName, StoreLocation.LocalMachine))
             {
-                throw new Exception($"Certificate with subject name '{subjectName}' was not found in the Local Machine store.");
-            }
+                store.Open(OpenFlags.ReadOnly);
 
-            return certCollection[0];
+                X509Certificate2Collection certCollection = store.Certificates.Find(
+                    X509FindType.FindBySubjectName, subjectName, validOnly: false);
+
+                if (certCollection.Count > 0)
+                {
+                    return certCollection[0];
+                }
+            }
         }
+
+        return null;
     }
 
 
