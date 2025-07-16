@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="bin\**" />
+    <Content Remove="bin\**" />
+    <EmbeddedResource Remove="bin\**" />
+    <None Remove="bin\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MediatR" Version="12.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
@@ -18,15 +25,22 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Trinity.PaymentPlatform.Airtel.Application\Trinity.PaymentPlatform.Airtel.Application.csproj" />
     <ProjectReference Include="..\Trinity.PaymentPlatform.Application\Trinity.PaymentPlatform.Application.csproj" />
     <ProjectReference Include="..\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate\Trinity.PaymentPlatform.Infrastructure.Persistence.NHibernate.csproj" />
     <ProjectReference Include="..\Trinity.PaymentPlatform.Mpesa.Application\Trinity.PaymentPlatform.Mpesa.Application.csproj" />
-    <ProjectReference Include="..\Trinity.PaymentPlatform.Shared\Trinity.PaymentPlatform.Shared.csproj" />
+	  <ProjectReference Include="..\Trinity.PaymentPlatform.Shared\Trinity.PaymentPlatform.Shared.csproj" />
     <ProjectReference Include="..\Trinity.PaymentProvider.API.Shared\Trinity.PaymentProvider.API.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Models\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\Trinity.PaymentPlatform.Infrastructure.ACL.Airtel\Helper\airtel_pub.pem" Link="airtel_pub.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

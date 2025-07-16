@@ -2,6 +2,7 @@
 using Trinity.PaymentPlatform.Model.Enum;
 using Trinity.PaymentPlatform.Model.SeedWork;
 using Trinity.PaymentPlatform.Model.SharedKernel;
+using Trinity.PaymentPlatform.Model.Util;
 
 namespace Trinity.PaymentPlatform.Model.PaymentTransactionAggregate;
 
@@ -42,9 +43,18 @@ public class PaymentTransaction : Entity<long>, IAggregateRoot
     protected virtual Result SetInProgress()
     {
         //todo: add state transition validation
+        ModifiedAt = DateTime.UtcNow.ToUnixTimestampMilliseconds();
         Status = PaymentTransactionStatus.InProgress;
         return Result.Ok();
     }
+
+    protected virtual Result Refund()
+    {
+        //todo: add state transition validation
+        Status = PaymentTransactionStatus.Refunded;
+        return Result.Ok();
+    }
+
 
     protected virtual Result SetAwaitingConfirmation()
     {
@@ -63,7 +73,7 @@ public class PaymentTransaction : Entity<long>, IAggregateRoot
         return Result.Ok();
     }
 
-    protected virtual Result SetRejected(string? error)
+    public virtual Result SetRejected(string? error)
     {
         //todo: add state transition validation
         Status = PaymentTransactionStatus.Rejected;

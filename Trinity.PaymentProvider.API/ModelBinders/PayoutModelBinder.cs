@@ -17,7 +17,7 @@ public class PayoutModelBinder : IModelBinder
         PayoutModel? model = type
             switch
             {
-                nameof(MpesaPayInModel) => JsonSerializer.Deserialize<MpesaPayoutModel>(json),
+                nameof(AirtelPayInModel) => JsonSerializer.Deserialize<AirtelPayoutModel>(json),
                 _ =>
                     throw new Exception()
             };

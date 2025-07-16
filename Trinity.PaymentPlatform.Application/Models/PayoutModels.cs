@@ -9,3 +9,9 @@ public record MpesaPayoutModel(string UserId,
     string CurrencyCode,
     string TransactionReference,
     string PhoneNumber) : PayoutModel(UserId, Amount, CurrencyCode, TransactionReference);
+
+public record AirtelPayoutModel(string UserId,
+    decimal Amount,
+    string CurrencyCode,
+    string TransactionReference,
+    string PhoneNumber, string Country) : PayoutModel(UserId, Amount, CurrencyCode, TransactionReference);

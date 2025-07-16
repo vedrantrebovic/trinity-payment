@@ -21,7 +21,7 @@ builder.Services.AddSerilog(cfg =>
     cfg.ConfigureBaseLogging("payment_platform_processor", builder.Configuration);
 });
 
-builder.Services.AddNpgsqlDataSource(builder.Configuration.GetConnectionString("default"), sourceBuilder =>
+builder.Services.AddNpgsqlDataSource(builder.Configuration.GetConnectionString("default_payment"), sourceBuilder =>
 {
     sourceBuilder.UseJsonNet();
 });

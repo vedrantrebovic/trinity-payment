@@ -25,19 +25,37 @@ public class CreatePayoutRequestCommandHandler(ILogger<CreatePayoutRequestComman
 
             unitOfWork.BeginTransaction();
 
-            var model = request.Model as MpesaPayoutModel;
+            //var model = request.Model as MpesaPayoutModel;
 
             var result = await transactionInitiator.CreatePayout(input);
             if (result.IsFailed)
                 return DomainError.CreateList(result.Errors);
 
-            await unitOfWork.CommitAsync();
-            return result.Value;
+          
+                
+                await unitOfWork.CommitAsync();
+          
+            var finalValue = result.Value;
+            Console.WriteLine("Returning value: " + finalValue);
+            return finalValue;
+
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            logger.LogError(e, e.Message);
-            return e;
+            try
+            {
+                Console.WriteLine("EXCEPTION CAUGHT:");
+                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Inner: " + ex.InnerException?.ToString());
+            }
+            catch (Exception e) {
+
+                Console.WriteLine(e.ToString());
+
+            }
+
+            logger.LogError(ex, "Commit succeeded but exception caught after. Message: {Message}", ex.Message);
+            return ex;
         }
         finally
         {

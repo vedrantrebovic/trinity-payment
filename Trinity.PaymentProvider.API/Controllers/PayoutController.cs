@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Trinity.PaymentPlatform.Application.Commands;
 using Trinity.PaymentPlatform.Application.Models;
+using Trinity.PaymentPlatform.Infrastructure.ACL.Airtel.Model;
 using Trinity.PaymentPlatform.Infrastructure.ACL.Mpesa.Models.Mpesa;
 using Trinity.PaymentPlatform.Mpesa.Application.Commands;
 using Trinity.PaymentProvider.API.Shared.ActionResults;
@@ -15,9 +16,24 @@ namespace Trinity.PaymentProvider.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreatePayoutRequest([FromBody] MpesaPayoutModel model)
         {
+            var result = await mediator.Send(new CreatePayoutRequestCommand(1, model));
+
             return this.Result(await mediator.Send(new CreatePayoutRequestCommand(1, model)));
         }
 
+
+        [HttpPost("airtel")]
+        public async Task<IActionResult> CreateAirtelPayoutRequest([FromBody] AirtelPayoutModel model)
+        {
+            var result = await mediator.Send(new CreatePayoutRequestCommand(2, model));
+
+            return result.Match<IActionResult>(
+                val => Ok(new { result = val }),
+                none => NotFound("Not found"),
+                list => BadRequest(new { errors = list }),
+                ex => StatusCode(500, new { error = "Internal Server Error", ex.Message })
+            );
+        }
         [HttpPost("result")]
         public async Task<IActionResult> B2CResult([FromBody] B2CResultRequestPayout model)
         {
@@ -41,5 +57,6 @@ namespace Trinity.PaymentProvider.API.Controllers
         {
             return this.Result(mediator.Send(new ProcessStatusCheckTimeoutRequestCommand(model)));
         }
+
     }
 }
