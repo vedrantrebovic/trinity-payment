@@ -21,18 +21,10 @@ namespace Trinity.PaymentProvider.API.Controllers
             return this.Result(await mediator.Send(new CreatePayoutRequestCommand(1, model)));
         }
 
-
         [HttpPost("airtel")]
         public async Task<IActionResult> CreateAirtelPayoutRequest([FromBody] AirtelPayoutModel model)
         {
-            var result = await mediator.Send(new CreatePayoutRequestCommand(2, model));
-
-            return result.Match<IActionResult>(
-                val => Ok(new { result = val }),
-                none => NotFound("Not found"),
-                list => BadRequest(new { errors = list }),
-                ex => StatusCode(500, new { error = "Internal Server Error", ex.Message })
-            );
+            return this.Result(await mediator.Send(new CreatePayoutRequestCommand(2, model)));
         }
         [HttpPost("result")]
         public async Task<IActionResult> B2CResult([FromBody] B2CResultRequestPayout model)

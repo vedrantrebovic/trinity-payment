@@ -46,19 +46,16 @@ namespace Trinity.PaymentProvider.API.Controllers
             return this.Result(await mediator.Send(new CreatePayinRequestCommand(2, model)));
         }
 
-
         [HttpPost("airtel/callback")]
         public async Task<IActionResult> AirtelCallback([FromBody] AirtelCallbackRequest model)
         {
             return this.Result(await mediator.Send(new ProcessAirtelPayinCallbackCommand(model)));
         }
 
-
         [HttpPost("airtel/refund")]
         public async Task<IActionResult> AirtelRefund([FromBody] AirtelRefundRequest model)
         {
             return this.Result(await mediator.Send(new ProcessAirtelRefundCommand(model)));
         }
-
     }
 }
